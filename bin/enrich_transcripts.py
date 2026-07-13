@@ -19,7 +19,7 @@ logging.basicConfig(
 
 def main():
     logging.info("Pipeline Step 2B (Gemini Enrichment) started.")
-    
+
     # -------------------------------------------------------------------------
     # API Environment Validation and Client Initialization
     # Extract the necessary credential key token from the local environment.
@@ -27,18 +27,18 @@ def main():
     # Otherwise, instantiate the official Google GenAI Client utility.
     # -------------------------------------------------------------------------
     api_key = os.getenv("GEMINI_API_KEY")
-    
+
     if not api_key:
         logging.critical("GEMINI_APP_KEY is not configured.")
         sys.exit(1)
-    client = genai.Client(api_key=api_key) 
+    client = genai.Client(api_key=api_key)
 
     # -------------------------------------------------------------------------
     # Structured Output Response Schema Definition
     # To prevent the LLM from returning unpredictable formats that would crash
-    # downstream applications, define a strict "Data Contract" using a JSON 
-    # Schema layout. 
-    # 
+    # downstream applications, define a strict "Data Contract" using a JSON
+    # Schema layout.
+    #
     # Enforce a response type of "OBJECT" that guarantees the presence of:
     #   - video_id: (STRING, Required)
     #   - cleaned_text: (STRING, Required)
@@ -80,12 +80,12 @@ def main():
         line = line.strip()
         if not line:
             continue
-            
+
         # ---------------------------------------------------------------------
         # Inbound String Stream Deserialization
         # Safely wrap your stream ingestion inside an isolated try-except block.
-        # Parse the raw line string object into a key-value dictionary and 
-        # extract the target 'video_id' and 'raw_text' properties. 
+        # Parse the raw line string object into a key-value dictionary and
+        # extract the target 'video_id' and 'raw_text' properties.
         # Log any malformed line tracks and continue processing the stream.
         # ---------------------------------------------------------------------
         try:
@@ -97,7 +97,7 @@ def main():
             continue
 
         logging.info(f"Orchestrating Gemini enrichment for video: {video_id}")
-        
+
         prompt = f"""
         You are an elite data engineer. Clean this transcript text for video_id '{video_id}'.
         1. Strip all timestamps and duration codes.
@@ -108,7 +108,7 @@ def main():
         # Structured Model Invocation and Instant Stream Flushing
         # Call the 'gemini-2.5-flash' model via the unified SDK interface.
         # Inject the constructed prompt along with the raw text sequence payload.
-        # Map the configuration block to use the structured JSON mime-type 
+        # Map the configuration block to use the structured JSON mime-type
         # and enforce your defined response schema parameters.
         # Write the resulting text explicitly to sys.stdout and flush immediately.
         # ---------------------------------------------------------------------
