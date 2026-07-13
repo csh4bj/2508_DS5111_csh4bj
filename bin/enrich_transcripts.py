@@ -29,7 +29,7 @@ def main():
     api_key = os.getenv("GEMINI_API_KEY")
 
     if not api_key:
-        logging.critical("GEMINI_APP_KEY is not configured.")
+        logging.critical("GEMINI_API_KEY is not configured.")
         sys.exit(1)
     client = genai.Client(api_key=api_key)
 

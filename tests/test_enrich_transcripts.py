@@ -35,6 +35,7 @@ def test_enrich_transcripts_streaming_pipeline(monkeypatch, capsys):
     monkeypatch.setattr(sys, "stdin", mock_stdin)
 
     # 4. Trigger the main pipeline script execution loop
+    monkeypatch.setenv("GEMINI_API_KEY", "fake-api-key")
     main()
 
     # 5. Intercept the standard console text buffers
