@@ -19,9 +19,9 @@ def test_enrich_transcripts_streaming_pipeline(monkeypatch, capsys):
     and streams verified JSON objects out to stdout without making live API network requests.
     """
     # 2. Mock out the core GenAI Client methods
-    def mock_generate_content(_self, _model, _contents, config=None):
-        """Return a pre-baked, schema-compliant JSON string mimicking the model output"""
-        del config
+    def mock_generate_content(_self, model, contents, config=None):
+        """Return a pre-baked, schema-compliant JSON string mimicking the model output."""
+        del model, contents, config
 
         mock_data = {
             "video_id": "ds5111_v001",
@@ -38,7 +38,7 @@ def test_enrich_transcripts_streaming_pipeline(monkeypatch, capsys):
     mock_input_row = {
         "video_id": "ds5111_v001",
         "raw_text": (
-            "00:01 Welcome to class."
+            "00:01 Welcome to class. "
             "Today we are testing mock frameworks."
         ),
    }
