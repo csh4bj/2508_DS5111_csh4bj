@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
+"""Validate enriched transcript JSONL records against the expected schema."""
+
 import sys
 import json
 
-def validate_payload(line_num, payload):
+def validate_payload(line_num, payload):  # pylint: disable=too-many-return-statements
     """
     Validates a single line of JSON data against the target API contract.
     Returns True if valid, False otherwise.
@@ -34,17 +36,24 @@ def validate_payload(line_num, payload):
     for field in optional_fields:
         if field in payload:
             if not isinstance(payload[field], list):
-                print(f"❌ [Row {line_num}] Type Failure: '{field}' must be an ARRAY (Python list).")
+                print(
+                    f"❌ [Row {line_num}] Type Failure: "
+                    f"'{field}' must be an ARRAY (Python list)."
+                )
                 return False
 
             # Ensure every element inside the array is a string primitive
             if not all(isinstance(item, str) for item in payload[field]):
-                print(f"❌ [Row {line_num}] Type Failure: All elements inside '{field}' must be STRINGS.")
+                print(
+                    f"❌ [Row {line_num}] Type Failure: "
+                    f"All elements inside '{field}' must be STRINGS."
+                )
                 return False
 
     return True
 
 def main():
+    """Read JSONL records from stdin and report schema validation results."""
     print("🚀 Starting pipeline data contract validation...")
     total_records = 0
     failed_records = 0
@@ -60,7 +69,10 @@ def main():
             if not validate_payload(total_records, data):
                 failed_records += 1
         except json.JSONDecodeError:
-            print(f"❌ [Row {total_records}] Syntax Failure: Line is not valid JSON Lines format.")
+            print(
+                f"❌ [Row {total_records}] Syntax Failure: "
+                "Line is not valid JSON Lines format."
+            )
             failed_records += 1
 
     print("\n--- Validation Summary ---")
@@ -68,10 +80,16 @@ def main():
         print("⚠️ Warning: No records were processed via stdin.")
         sys.exit(1)
     elif failed_records > 0:
-        print(f"🔴 Failure: {failed_records}/{total_records} records violated the schema contract.")
+        print(
+            f"🔴 Failure: {failed_records}/{total_records} "
+            "records violated the schema contract."
+        )
         sys.exit(1)
     else:
-        print(f"🟢 Success: All {total_records} records successfully match the required data contract!")
+        print(
+            f"🟢 Success: All {total_records} records successfully "
+            "match the required data contract!"
+        )
         sys.exit(0)
 
 if __name__ == '__main__':

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+"""Enrich transcript records with structured data from the Gemini API."""
+
 import sys
 import os
 import json
@@ -18,6 +20,7 @@ logging.basicConfig(
 )
 
 def main():
+    """Read transcript JSONL records, enrich them, and emit structured JSONL."""
     logging.info("Pipeline Step 2B (Gemini Enrichment) started.")
 
     # -------------------------------------------------------------------------
@@ -92,11 +95,17 @@ def main():
             payload = json.loads(line)
             video_id = payload["video_id"]
             raw_text = payload["raw_text"]
-        except Exception as e:
-            logging.error(f"Failed to parse incoming JSON payload row: {str(e)}")
+        except (json.JSONDecodeError, KeyError, TypeError) as exc:
+            logging.error(
+                "Failed to parse incoming JSON payload row: %s",
+                exc,
+            )
             continue
 
-        logging.info(f"Orchestrating Gemini enrichment for video: {video_id}")
+        logging.info(
+            "Orchestrating Gemini enrichment for video: %s",
+            video_id,
+        )
 
         prompt = f"""
         You are an elite data engineer. Clean this transcript text for video_id '{video_id}'.
@@ -125,8 +134,12 @@ def main():
             sys.stdout.write(json.dumps(enriched_payload) + "\n")
             sys.stdout.flush()
 
-        except Exception as e:
-            logging.error(f"Failed processing video {video_id} during LLM generation: {str(e)}")
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            logging.error(
+                "Failed processing video %s during LLM generation: %s",
+                video_id,
+                exc,
+            )
 
     logging.info("Pipeline Step 2B finished.")
 
