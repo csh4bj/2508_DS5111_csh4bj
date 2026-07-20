@@ -5,10 +5,11 @@ import sys
 import os
 import json
 import logging
+from abc import ABC, abstractmethod
+
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
-from abc import ABC, abstractmethod
 
 # Load environmental configurations from local workspace files
 load_dotenv()
@@ -26,10 +27,9 @@ class LLMStrategy(ABC):
     def enrich(self, video_id: str, raw_text: str) -> dict:
         """
         Takes in transcript data and returns a dictionary matching
-        the enrichment response schema. 
+        the enrichment response schema.
         """
         pass
-    
 
 def main():
     """Read transcript JSONL records, enrich them, and emit structured JSONL."""
