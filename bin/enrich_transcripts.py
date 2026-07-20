@@ -6,6 +6,7 @@ import logging
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+from abc import ABC, abstractmethod
 
 # Load environmental configurations from local workspace files
 load_dotenv()
@@ -16,6 +17,17 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
+
+class LLMStrategy(ABC):
+    """Abstract contract for transcript enrichment strategies."""
+    @abstractmethod
+    def enrich(self, video_id: str, raw_text: str) -> dict:
+        """
+        Takes in transcript data and returns a dictionary matching
+        the enrichment response schema. 
+        """
+        pass
+    
 
 def main():
     logging.info("Pipeline Step 2B (Gemini Enrichment) started.")
