@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+"""Enrich transcript records with structured data from the Gemini API."""
+
 import sys
 import os
 import json
@@ -30,8 +32,9 @@ class LLMStrategy(ABC):
     
 
 def main():
+    """Read transcript JSONL records, enrich them, and emit structured JSONL."""
     logging.info("Pipeline Step 2B (Gemini Enrichment) started.")
-    
+
     # -------------------------------------------------------------------------
     # API Environment Validation and Client Initialization
     # Extract the necessary credential key token from the local environment.
@@ -39,18 +42,18 @@ def main():
     # Otherwise, instantiate the official Google GenAI Client utility.
     # -------------------------------------------------------------------------
     api_key = os.getenv("GEMINI_API_KEY")
-    
+
     if not api_key:
-        logging.critical("GEMINI_APP_KEY is not configured.")
+        logging.critical("GEMINI_API_KEY is not configured.")
         sys.exit(1)
-    client = genai.Client(api_key=api_key) 
+    client = genai.Client(api_key=api_key)
 
     # -------------------------------------------------------------------------
     # Structured Output Response Schema Definition
     # To prevent the LLM from returning unpredictable formats that would crash
-    # downstream applications, define a strict "Data Contract" using a JSON 
-    # Schema layout. 
-    # 
+    # downstream applications, define a strict "Data Contract" using a JSON
+    # Schema layout.
+    #
     # Enforce a response type of "OBJECT" that guarantees the presence of:
     #   - video_id: (STRING, Required)
     #   - cleaned_text: (STRING, Required)
@@ -92,24 +95,30 @@ def main():
         line = line.strip()
         if not line:
             continue
-            
+
         # ---------------------------------------------------------------------
         # Inbound String Stream Deserialization
         # Safely wrap your stream ingestion inside an isolated try-except block.
-        # Parse the raw line string object into a key-value dictionary and 
-        # extract the target 'video_id' and 'raw_text' properties. 
+        # Parse the raw line string object into a key-value dictionary and
+        # extract the target 'video_id' and 'raw_text' properties.
         # Log any malformed line tracks and continue processing the stream.
         # ---------------------------------------------------------------------
         try:
             payload = json.loads(line)
             video_id = payload["video_id"]
             raw_text = payload["raw_text"]
-        except Exception as e:
-            logging.error(f"Failed to parse incoming JSON payload row: {str(e)}")
+        except (json.JSONDecodeError, KeyError, TypeError) as exc:
+            logging.error(
+                "Failed to parse incoming JSON payload row: %s",
+                exc,
+            )
             continue
 
-        logging.info(f"Orchestrating Gemini enrichment for video: {video_id}")
-        
+        logging.info(
+            "Orchestrating Gemini enrichment for video: %s",
+            video_id,
+        )
+
         prompt = f"""
         You are an elite data engineer. Clean this transcript text for video_id '{video_id}'.
         1. Strip all timestamps and duration codes.
@@ -120,7 +129,7 @@ def main():
         # Structured Model Invocation and Instant Stream Flushing
         # Call the 'gemini-2.5-flash' model via the unified SDK interface.
         # Inject the constructed prompt along with the raw text sequence payload.
-        # Map the configuration block to use the structured JSON mime-type 
+        # Map the configuration block to use the structured JSON mime-type
         # and enforce your defined response schema parameters.
         # Write the resulting text explicitly to sys.stdout and flush immediately.
         # ---------------------------------------------------------------------
@@ -137,8 +146,12 @@ def main():
             sys.stdout.write(json.dumps(enriched_payload) + "\n")
             sys.stdout.flush()
 
-        except Exception as e:
-            logging.error(f"Failed processing video {video_id} during LLM generation: {str(e)}")
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            logging.error(
+                "Failed processing video %s during LLM generation: %s",
+                video_id,
+                exc,
+            )
 
     logging.info("Pipeline Step 2B finished.")
 

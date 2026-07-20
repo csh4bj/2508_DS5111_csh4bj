@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+"""Extract YouTube transcripts from video IDs read from standard input."""
+
 import sys
 import os
 import json
@@ -17,14 +19,18 @@ logging.basicConfig(
 )
 
 def main():
+    """Read video IDs, fetch transcripts, and emit JSONL records."""
     logging.info("Pipeline Step 2A (Raw Extraction) started.")
-    
+
     # Ingest routing keys from the local shell environment
     proxy_user = os.getenv("WEBSHARE_USER")
     proxy_pass = os.getenv("WEBSHARE_PASSWORD")
-    
+
     if proxy_user and proxy_pass:
-        logging.info("Proxy credentials detected. Routing traffic via Webshare Residential network.")
+        logging.info(
+            "Proxy credentials detected. "
+            "Routing traffic via Webshare Residential network."
+        )
         # Use YouTubeTranscriptApi with a keyword argument proxy_config.
         #    Use WebshareProxyConfig to create the proxy using the username and password
         ytt_api = YouTubeTranscriptApi(
@@ -42,22 +48,27 @@ def main():
         video_id = line.strip()
         if not video_id:
             continue
-            
-        logging.info(f"Processing transcript extraction for video: {video_id}")
-        
+
+        logging.info(
+            "Processing transcript extraction for video: %s",
+            video_id,
+        )
+
         try:
             # Execute the modern 2026 instance lookup method
             fetched_transcript = ytt_api.fetch(video_id)
             transcript_list = fetched_transcript.to_raw_data()
-            
+
             # Stitch chunks with timestamp codes preserved for the staging file
-            raw_text = " ".join([f"[{item['start']}] {item['text']}" for item in transcript_list])
-            
+            raw_text = " ".join(
+                f"[{item['start']}] {item['text']}"
+                for item in transcript_list
+            )
             # Pack into a simple intermediary JSON object and emit to stdout
             #  Create a variable called payload
             #    Store a dict object with video_id and raw_text as keys, with the appropriate values
             #    Then use sys.stdout to write that to console
-            #    Finally, flush the stdout 
+            #    Finally, flush the stdout
             payload = {
                 "video_id": video_id,
                 "raw_text": raw_text
@@ -65,9 +76,13 @@ def main():
 
             sys.stdout.write(json.dumps(payload) + "\n")
             sys.stdout.flush()
-            
-        except Exception as e:
-            logging.error(f"Failed to fetch YouTube transcript for {video_id}: {str(e)}")
+
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            logging.error(
+                "Failed to fetch YouTube transcript for %s: %s",
+                video_id,
+                exc,
+            )
             continue
 
     logging.info("Pipeline Step 2A finished.")
