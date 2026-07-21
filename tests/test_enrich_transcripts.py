@@ -5,7 +5,28 @@ import io
 import json
 from google.genai.models import Models
 
-from bin.enrich_transcripts import main
+from bin.enrich_transcripts import main, LLMStrategy, TranscriptEnricher
+
+class MockLLMStrategy(LLMStrategy):  # pylint: disable=too-few-public-methods
+    """Configurable fake strategy for testing without a live API."""
+
+    def __init__(self, should_fail: bool = False):
+        """Set whether the mock should raise an error."""
+        self.should_fail = should_fail
+
+    def enrich(self, video_id: str, raw_text: str) -> dict:
+        """Return predictable data or simulate a strategy failure."""
+        if self.should_fail:
+            raise RuntimeError(
+                f"Simulated enrichment failure for {video_id}"
+            )
+
+        return {
+            "video_id": video_id,
+            "cleaned_text": f"cleaned: {raw_text}",
+            "tech_terms": ["mock_term"],
+            "book_names": ["Mock Book"],
+        }
 
 # 1. Build a dummy container mimicking the Gemini SDK response hierarchy
 class MockGeminiResponse:  # pylint: disable=too-few-public-methods
@@ -58,3 +79,40 @@ def test_enrich_transcripts_streaming_pipeline(monkeypatch, capsys):
     parsed_output = json.loads(stdout_lines[0])
     assert parsed_output["video_id"] == "ds5111_v001"
     assert "mock frameworks" in parsed_output["tech_terms"]
+
+def test_transcript_enricher_success_path(monkeypatch, capsys):
+    """Test TranscriptEnricher with a successful mock strategy."""
+    monkeypatch.setattr(
+        sys,
+        "stdin",
+        io.StringIO(
+            '{"video_id":"camher99","raw_text":"Hopefully this works!"}\n'
+        ),
+    )
+    engine = TranscriptEnricher(MockLLMStrategy())
+    engine.run_stream()
+
+    stdout_lines = capsys.readouterr().out.strip().split("\n")
+    assert len(stdout_lines) == 1
+
+    result = json.loads(stdout_lines[0])
+    assert result["video_id"] == "camher99"
+    assert result["cleaned_text"] == "cleaned: Hopefully this works!"
+
+def test_transcript_enricher_failure_path(monkeypatch, capsys, caplog):
+    """Test TranscriptEnricher when the strategy raises an exception."""
+    monkeypatch.setattr(
+        sys,
+        "stdin",
+        io.StringIO(
+            '{"video_id":"camher99","raw_text":"Hopefully this works!"}\n'
+        ),
+    )
+
+    engine = TranscriptEnricher(MockLLMStrategy(should_fail=True))
+    engine.run_stream()
+
+    captured = capsys.readouterr()
+
+    assert captured.out == ""
+    assert "Failed processing video camher99" in caplog.text
