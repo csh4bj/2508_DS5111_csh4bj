@@ -92,6 +92,42 @@ class GeminiStrategy(LLMStrategy):  # pylint: disable=too-few-public-methods
         enriched_payload = json.loads(response.text)
         return enriched_payload
 
+class TranscriptEnricher:  # pylint: disable=too-few-public-methods
+    """Orchestrate transcript enrichment using an injected strategy."""
+
+    def __init__(self, strategy: LLMStrategy):
+        """Store the enrichment strategy."""
+        self.strategy = strategy
+
+    def run_stream(self):
+        """Process transcript records from standard input."""
+        for line in sys.stdin:
+            line = line.strip()
+            if not line:
+                continue
+
+            try:
+                payload = json.loads(line)
+                video_id = payload["video_id"]
+                raw_text = payload["raw_text"]
+            except (json.JSONDecodeError, KeyError, TypeError) as exc:
+                logging.error(
+                    "Failed to parse incoming JSON payload row: %s",
+                    exc,
+                )
+                continue
+
+            try:
+                enriched_payload = self.strategy.enrich(video_id, raw_text)
+                sys.stdout.write(json.dumps(enriched_payload) + "\n")
+                sys.stdout.flush()
+            except Exception as exc:  # pylint: disable=broad-exception-caught
+                logging.error(
+                    "Failed processing video %s during LLM generation: %s",
+                    video_id,
+                    exc,
+                )
+
 def main():
     """Read transcript JSONL records, enrich them, and emit structured JSONL."""
     logging.info("Pipeline Step 2B (Gemini Enrichment) started.")
