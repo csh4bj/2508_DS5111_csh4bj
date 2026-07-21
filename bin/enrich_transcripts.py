@@ -21,7 +21,7 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-class LLMStrategy(ABC):
+class LLMStrategy(ABC):  # pylint: disable=too-few-public-methods
     """Abstract contract for transcript enrichment strategies."""
     @abstractmethod
     def enrich(self, video_id: str, raw_text: str) -> dict:
@@ -29,7 +29,68 @@ class LLMStrategy(ABC):
         Takes in transcript data and returns a dictionary matching
         the enrichment response schema.
         """
-        pass
+
+class GeminiStrategy(LLMStrategy):  # pylint: disable=too-few-public-methods
+    """Concrete strategy for enriching transcripts with Gemini."""
+
+    response_schema = {
+        "type": "OBJECT",
+        "properties": {
+            "video_id": {
+                "type": "STRING",
+            },
+            "cleaned_text": {
+                "type": "STRING",
+            },
+            "tech_terms": {
+                "type": "ARRAY",
+                "items": {
+                    "type": "STRING",
+                },
+            },
+            "book_names": {
+                "type": "ARRAY",
+                "items": {
+                    "type": "STRING",
+                },
+            },
+        },
+        "required": [
+            "video_id",
+            "cleaned_text",
+            "tech_terms",
+            "book_names",
+        ],
+    }
+
+    def __init__(self, api_key: str = None):
+        """Initialize the Gemini client."""
+        resolved_api_key = api_key or os.getenv("GEMINI_API_KEY")
+
+        if not resolved_api_key:
+            raise ValueError("GEMINI_API_KEY is not configured.")
+
+        self.client = genai.Client(api_key=resolved_api_key)
+
+    def enrich(self, video_id: str, raw_text: str) -> dict:
+        """Enrich transcript data using Gemini."""
+        prompt = f"""
+        You are an elite data engineer. Clean this transcript text for video_id '{video_id}'.
+        1. Strip all timestamps and duration codes.
+        2. Extract technical architecture terms and books.
+        """
+
+        response = self.client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt + "\n\nTranscript:\n" + raw_text,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=self.response_schema,
+            ),
+        )
+
+        enriched_payload = json.loads(response.text)
+        return enriched_payload
 
 def main():
     """Read transcript JSONL records, enrich them, and emit structured JSONL."""
