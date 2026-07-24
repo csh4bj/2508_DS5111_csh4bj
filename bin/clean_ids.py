@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-''' This script reads YouTube IDs and validates whether they follow the valid YouTube ID rules. 
+''' This script reads YouTube IDs and validates whether they follow the valid YouTube ID rules.
 It'll print valid IDs to stdout and record invalid IDs to pipeline_autid.log '''
 
 import sys
@@ -17,7 +17,7 @@ def valid_id(youtube_id: str) -> bool:
         re.match(r"^[A-Za-z0-9_-]{11}$", youtube_id )
     )
 def main():
-    ''' This script reads YouTube IDs and validates whether they follow the valid YouTube ID rules. 
+    ''' This script reads YouTube IDs and validates whether they follow the valid YouTube ID rules.
     It'll print valid IDs to stdout and record invalid IDs to pipeline_autid.log '''
     try:
         with open("pipeline_autid.log", "a", encoding ="utf-8") as youtube_log:

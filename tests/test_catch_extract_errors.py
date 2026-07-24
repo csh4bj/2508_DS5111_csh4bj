@@ -1,9 +1,8 @@
+"""Tests error handling in extract_transcripts.py."""
+
 import sys
 import io
-import json
-import pytest
 from youtube_transcript_api import YouTubeTranscriptApi
-
 from bin.extract_transcripts import main
 
 def test_extract_transcripts_catch_errors(monkeypatch, capsys):
@@ -13,7 +12,7 @@ def test_extract_transcripts_catch_errors(monkeypatch, capsys):
     """
 
     # Creates a fake fetch that automatically raises an error.
-    def failed_fetch(self, video_id):
+    def failed_fetch(_, video_id):
         assert video_id == "notarealid99"
         raise RuntimeError("Not able to fetch transcript")
 
@@ -29,5 +28,5 @@ def test_extract_transcripts_catch_errors(monkeypatch, capsys):
     # Intercept the standard console terminal print buffers using capsys
     captured_output = capsys.readouterr()
 
-    # Makes sure there is no JSON transcript was printed for this failed video ID. 
+    # Makes sure there is no JSON transcript was printed for this failed video ID.
     assert captured_output.out == ""
