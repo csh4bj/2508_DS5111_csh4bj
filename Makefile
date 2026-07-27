@@ -23,3 +23,8 @@ test_enrich:
 
 run:
 	cat test_ids | $(PYTHON) bin/clean_ids.py
+
+.PHONY: load
+load:
+	@echo "Initiating Cloud Data Warehouse Synchronizer Node..."
+	cat data/enriched_transcripts.jsonl | $(PYTHON) bin/load_snowflake.py
