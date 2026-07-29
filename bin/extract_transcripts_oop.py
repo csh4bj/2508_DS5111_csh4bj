@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Extract transcript content using interchangeable source strategies."""
-
+# pylint: disable=too-few-public-methods
 import argparse
 import json
 import os
@@ -113,7 +113,7 @@ class ExtractionEngine:
                 sys.stdout.write(json.dumps(payload) + "\n")
                 sys.stdout.flush()
 
-            except Exception as error:
+            except Exception as error:  # pylint: disable=broad-exception-caught
                 sys.stderr.write(
                     f"ERROR processing token [{source_id}]: {error}\n"
                 )
