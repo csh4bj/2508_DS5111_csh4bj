@@ -12,7 +12,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Step 5: Copy your functional codebase assets down into the image space
 COPY bin/ ./bin/
-RUN mkdir -p logs/
+RUN mkdir -p logs/ pipeline/logs/
 
 # Step 6: Define the default interactive streaming entrypoint target command
 CMD ["sh", "-c", "python bin/clean_ids.py | python bin/extract_transcripts_oop.py | python bin/load_snowflake.py"]
