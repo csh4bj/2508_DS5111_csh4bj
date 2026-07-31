@@ -30,7 +30,10 @@ def main():
     sf_password = os.getenv('SF_PASSWORD')
 
     if not sf_user or not sf_password:
-        logging.critical("Missing critical Snowflake runtime credential bindings. Ingestion aborted.")
+        logging.critical(
+            "Missing critical Snowflake runtime credential bindings. "
+            "Ingestion aborted."
+        )
         sys.exit(1)
 
     try:
@@ -47,10 +50,12 @@ def main():
         )
         cs = ctx.cursor()
 
-    except Exception as e:
-        logging.critical(f"Snowflake Authorization Context Handshake Failed: {str(e)}")
+    except Exception as error:  # pylint: disable=broad-exception-caught
+        logging.critical(
+            "Snowflake Authorization Context Handshake Failed: %s",
+            error,
+        )
         sys.exit(1)
-
     # -------------------------------------------------------------------------
     # STEP 2: Semi-Structured Polymorphic Schema Verification (DDL) [RESOLVED]
     # Execute a DDL statement to guarantee the target landing table exists.
@@ -69,12 +74,14 @@ def main():
             """
         )
         ### STEP 2 CODE END
-    except Exception as e:
-        logging.error(f"Failed to execute target structural validation DDL: {str(e)}")
+    except Exception as error:  # pylint: disable=broad-exception-caught
+        logging.error(
+            "Failed to execute target structural validation DDL: %s",
+            error,
+        )
         cs.close()
         ctx.close()
         sys.exit(1)
-
     # -------------------------------------------------------------------------
     # STEP 3: Safe Streaming Consumer Insertion Invariant [RESOLVED]
     # Process inputs infinitely line-by-line via sys.stdin streaming.
@@ -108,10 +115,16 @@ def main():
             ### STEP 3 CODE END
 
             # Left intact from your original template design:
-            logging.info(f"Loaded entry token item target: [{json_data.get('video_id', 'UNKNOWN')}] safely to warehouse.")
-        except Exception as e:
-            logging.error(f"Skipping corrupt pipeline payload stream element: {str(e)}")
+            logging.info(
+                "Loaded entry token item target: [%s] safely to warehouse.",
+                json_data.get("video_id", "UNKNOWN"),
+            )
 
+        except Exception as error:  # pylint: disable=broad-exception-caught
+            logging.error(
+                "Skipping corrupt pipeline payload stream element: %s",
+                error,
+            )
     # -------------------------------------------------------------------------
     # STEP 4: Defensive Resource Reclamation Lifecycle [RESOLVED]
     # Ensure that resource cursors and connection pools are definitively closed
